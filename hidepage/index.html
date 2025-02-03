@@ -1,2 +1,112 @@
-Congratulations, you've found a hidden page, but it doesn't work.
-Something come soon.......
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>网页版密码加密解密工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #333; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        #result { margin-top: 15px; padding: 10px; background: white; border-radius: 4px; word-wrap: break-word; }
+        .copy-btn { margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <label for="inputText">明文/密文:</label>
+            <input type="text" id="inputText" placeholder="输入要加密或解密的文本">
+        </div>
+        
+        <div class="input-group">
+            <label for="key">密钥:</label>
+            <input type="password" id="key" placeholder="输入密钥">
+        </div>
+
+        <button onclick="handleEncrypt()">加密</button>
+        <button onclick="handleDecrypt()">解密</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 加密函数
+        function encrypt(plaintext, key) {
+            const plainBytes = new TextEncoder().encode(plaintext);
+            const keyBytes = new TextEncoder().encode(key);
+            const cipherBytes = new Uint8Array(plainBytes.length);
+            
+            for (let i = 0; i < plainBytes.length; i++) {
+                const k = keyBytes[i % keyBytes.length];
+                cipherBytes[i] = plainBytes[i] ^ k;
+            }
+            
+            return btoa(String.fromCharCode(...cipherBytes));
+        }
+
+        // 解密函数
+        function decrypt(ciphertext, key) {
+            const cipherBytes = new Uint8Array(
+                atob(ciphertext).split('').map(c => c.charCodeAt(0))
+            );
+            const keyBytes = new TextEncoder().encode(key);
+            const plainBytes = new Uint8Array(cipherBytes.length);
+            
+            for (let i = 0; i < cipherBytes.length; i++) {
+                const k = keyBytes[i % keyBytes.length];
+                plainBytes[i] = cipherBytes[i] ^ k;
+            }
+            
+            return new TextDecoder().decode(plainBytes);
+        }
+
+        // 操作处理
+        function handleEncrypt() {
+            try {
+                const input = document.getElementById('inputText').value;
+                const key = document.getElementById('key').value;
+                if (!input || !key) throw new Error('输入和密钥不能为空');
+                
+                const result = encrypt(input, key);
+                showResult(`加密结果: <span id="resultText">${result}</span> 
+                           <button class="copy-btn" onclick="copyResult()">复制</button>`);
+            } catch (e) {
+                showResult(`错误: ${e.message}`, true);
+            }
+        }
+
+        function handleDecrypt() {
+            try {
+                const input = document.getElementById('inputText').value;
+                const key = document.getElementById('key').value;
+                if (!input || !key) throw new Error('输入和密钥不能为空');
+                
+                const result = decrypt(input, key);
+                showResult(`解密结果: <span id="resultText">${result}</span>
+                           <button class="copy-btn" onclick="copyResult()">复制</button>`);
+            } catch (e) {
+                showResult(`错误: ${e.message}`, true);
+            }
+        }
+
+        // 显示结果
+        function showResult(text, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = text;
+            resultDiv.style.color = isError ? 'red' : 'green';
+        }
+
+        // 复制结果
+        function copyResult() {
+            const resultText = document.getElementById('resultText').innerText;
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert('已复制到剪贴板!');
+            });
+        }
+    </script>
+</body>
+</html>
